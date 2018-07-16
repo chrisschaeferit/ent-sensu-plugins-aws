@@ -61,7 +61,7 @@ class EC2CpuBalance < Sensu::Plugin::Check::CLI
 
   def data(instance)
     client = Aws::CloudWatch::Client.new
-    stats = 'Average'
+    stats = 'Minimum'
     period = 60
     resp = client.get_metric_statistics(
       namespace: 'AWS/EC2',
