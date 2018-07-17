@@ -12,8 +12,8 @@ Gem::Specification.new do |s|
   s.date = "2018-06-22"
   s.description = "This plugin provides native AWS instrumentation\n                              for monitoring and metrics collection, including:\n                              health and metrics for various AWS services, such\n                              as EC2, RDS, ELB, and more, as well as handlers\n                              for EC2, SES, and SNS.".freeze
   s.email = "<sensu-users@googlegroups.com>".freeze
-  s.executables = ["check-ec2-cpu_metrics.rb".freeze]
-  s.files = ["bin/check-ec2-cpu_metrics.rb".freeze]
+  s.executables = ["check-ec2-cpu_balance.rb".freeze]
+  s.files = ["bin/check-ec2-cpu_balance.rb".freeze]
   s.homepage = "https://github.com/chrisschaeferit/sensu-plugins-aws".freeze
   s.licenses = ["MIT".freeze]
   s.post_install_message = "You can use the embedded Ruby by setting EMBEDDED_RUBY=true in /etc/default/sensu".freeze
