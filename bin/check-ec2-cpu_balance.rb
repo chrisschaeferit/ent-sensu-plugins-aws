@@ -81,10 +81,24 @@ class EC2CpuBalance < Sensu::Plugin::Check::CLI
     return resp.datapoints.first.send(stats.downcase) unless resp.datapoints.first.nil?
   end
 
+
   def instance_tag(instance, tag_name)
     tag = instance.tags.select { |t| t.key == tag_name }.first
     tag.nil? ? '' : tag.value
   end
+    
+  #def vpc
+  #  vpcstuff = Aws::EC2::Client.new
+  #  vpcnames = vpcstuff.describe_vpcs({
+  #      filters: [
+  #              {
+  #        name: 'tag-key',
+  #        values: ['Name']
+  #      }
+  #      ]
+  #  }
+  #      )
+ # end
 
   def run
     ec2 = Aws::EC2::Client.new
@@ -96,22 +110,34 @@ class EC2CpuBalance < Sensu::Plugin::Check::CLI
         }
       ]
     )
+    #search has to have Name tag in order to complete
+    vpcnames = ec2.describe_vpcs(
+            filters: [
+                    {
+                name: 'tag-key',
+                values: ['Name']
+                    }
+            ]
+    )
 
+    #parses response for the value of the tag key "Name" for alert info
+    vpc_fullname = vpcnames.data[:vpcs].first.tags.find{|tag| tag.key == 'Name' }.value
     messages = "\n"
     level = 0
     instances.reservations.each do |reservation|
       reservation.instances.each do |instance|
         next unless instance.instance_type.start_with? 't2.'
         id = instance.instance_id
+        private_addr = instance.private_ip_address
         result = data id
-        tag = config[:tag] ? " (#{instance_tag(instance, config[:tag])})" : ''
+        tag = config[:tag] ? " #{instance_tag(instance, config[:tag])}" : ''
         unless result.nil?
           if result < config[:critical]
             level = 2
-            messages << "#{id}#{tag} is below critical threshold [#{result} < #{config[:critical]}]\n"
+            messages << "#{tag}-#{vpc_fullname}-#{private_addr} is below critical threshold [#{result} < #{config[:critical]}]\n"
           elsif config[:warning] && result < config[:warning]
             level = 1 if level.zero?
-            messages << "#{id}#{tag} is below warning threshold [#{result} < #{config[:warning]}]\n"
+            messages << "#{tag}-#{vpc_fullname}-#{private_addr} is below warning threshold [#{result} < #{config[:warning]}]\n"
           end
         end
       end
