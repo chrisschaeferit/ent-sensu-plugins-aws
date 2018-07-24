@@ -105,13 +105,13 @@ def sensu_client_socket(msg)
   end
 
   def send_warning(check_name, msg, metric)
-    d = { 'name' => check_name, 'status' => 1, 'output' => 'WARNING: ' + msg }#, 'handlers' => handlers }
+    d = { 'name' => check_name, 'status' => 1, 'output' => 'WARNING: ' +  msg }#, 'handlers' => handlers }
     d['type'] = 'metric' if metric
     sensu_client_socket d.to_json
   end
 
   def send_critical(check_name, msg, metric)
-    d = { 'name' => check_name, 'status' => 2, 'output' => 'CRITICAL: ' + msg }#,  'handlers' => handlers }
+    d = { 'name' => check_name, 'status' => 2, 'output' => 'CRITICAL: ' +  msg }#,  'handlers' => handlers }
     d['type'] = 'metric' if metric
     sensu_client_socket d.to_json
   end
@@ -135,36 +135,34 @@ def sensu_client_socket(msg)
             ]
     )
     vpc_fullname = vpcnames.data[:vpcs].first.tags.find{|tag| tag.key == 'Name' }.value
-    messages = "\n"
     level = 0
     instances.reservations.each do |reservation|
       reservation.instances.each do |instance|
         next unless instance.instance_type.start_with? 't2.'
-        ####
-        output = messages
-        ####
         id = instance.instance_id
         private_addr = instance.private_ip_address
         result = data id
         tag = config[:tag] ? " #{instance_tag(instance, config[:tag])}" : ''
-        test_name = "#{tag}_#{vpc_fullname}-#{private_addr}"
+        output = "#{tag}_#{vpc_fullname}-#{private_addr}"
+        test_name = output
         unless result.nil?
           if result < config[:critical]
-          send_critical(
-          test_name,
-          output,
-          config[:metric]
-        )
+            send_critical(
+            test_name,
+            output,
+            config[:metric]
+          )        
             level = 2
              
           elsif config[:warning] && result < config[:warning]
-          send_warning(
+            send_warning(
             test_name,
             output,
-            config[:metric] 
-        )
+            config[:metric]
+          ) 
+          
                   level = 1 if level.zero?
-         
+            
           end
         end
       end
