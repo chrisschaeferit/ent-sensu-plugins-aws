@@ -150,17 +150,21 @@ def sensu_client_socket(msg)
         test_name = "#{tag}_#{vpc_fullname}-#{private_addr}"
         unless result.nil?
           if result < config[:critical]
-          send_ok(
+          send_critical(
           test_name,
           output,
           config[:metric]
         )
             level = 2
              
-  sensu_client_socket messages << "#{tag}-#{vpc_fullname}-#{private_addr} is below critical threshold [#{result} < #{config[:critical]}]\n"
           elsif config[:warning] && result < config[:warning]
-            level = 1 if level.zero?
- sensu_client_socket messages << "#{tag}-#{vpc_fullname}-#{private_addr} is below warning threshold [#{result} < #{config[:warning]}]\n"
+          send_warning(
+            test_name,
+            output,
+            config[:metric] 
+        )
+                  level = 1 if level.zero?
+         
           end
         end
       end
