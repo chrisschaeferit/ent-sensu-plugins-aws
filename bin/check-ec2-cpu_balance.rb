@@ -31,6 +31,8 @@
 require 'sensu-plugins-aws'
 require 'sensu-plugin/check/cli'
 require 'aws-sdk'
+require 'socket'
+
 
 class EC2CpuBalance < Sensu::Plugin::Check::CLI
   include Common
@@ -86,20 +88,34 @@ class EC2CpuBalance < Sensu::Plugin::Check::CLI
     tag = instance.tags.select { |t| t.key == tag_name }.first
     tag.nil? ? '' : tag.value
   end
-    
-  #def vpc
-  #  vpcstuff = Aws::EC2::Client.new
-  #  vpcnames = vpcstuff.describe_vpcs({
-  #      filters: [
-  #              {
-  #        name: 'tag-key',
-  #        values: ['Name']
-  #      }
-  #      ]
-  #  }
-  #      )
- # end
+  ####
+def sensu_client_socket(msg)
+    u = UDPSocket.new
+    u.send(msg + "\n", 0, '127.0.0.1', 3030)
+  end
 
+#   def handlers
+#     config[:handlers].split(',').map { |x| x.strip }
+#   end
+
+  def send_ok(check_name, msg, metric)
+    d = { 'name' => check_name, 'status' => 0, 'output' => 'OK: ' + msg }#, 'handlers' => handlers }
+    d['type'] = 'metric' if metric
+    sensu_client_socket d.to_json
+  end
+
+  def send_warning(check_name, msg, metric)
+    d = { 'name' => check_name, 'status' => 1, 'output' => 'WARNING: ' + msg }#, 'handlers' => handlers }
+    d['type'] = 'metric' if metric
+    sensu_client_socket d.to_json
+  end
+
+  def send_critical(check_name, msg, metric)
+    d = { 'name' => check_name, 'status' => 2, 'output' => 'CRITICAL: ' + msg }#,  'handlers' => handlers }
+    d['type'] = 'metric' if metric
+    sensu_client_socket d.to_json
+  end
+  ####
   def run
     ec2 = Aws::EC2::Client.new
     instances = ec2.describe_instances(
@@ -110,7 +126,6 @@ class EC2CpuBalance < Sensu::Plugin::Check::CLI
         }
       ]
     )
-    #search has to have Name tag in order to complete
     vpcnames = ec2.describe_vpcs(
             filters: [
                     {
@@ -119,31 +134,39 @@ class EC2CpuBalance < Sensu::Plugin::Check::CLI
                     }
             ]
     )
-
-    #parses response for the value of the tag key "Name" for alert info
     vpc_fullname = vpcnames.data[:vpcs].first.tags.find{|tag| tag.key == 'Name' }.value
     messages = "\n"
     level = 0
     instances.reservations.each do |reservation|
       reservation.instances.each do |instance|
         next unless instance.instance_type.start_with? 't2.'
+        ####
+        output = messages
+        ####
         id = instance.instance_id
         private_addr = instance.private_ip_address
         result = data id
         tag = config[:tag] ? " #{instance_tag(instance, config[:tag])}" : ''
+        test_name = "#{tag}_#{vpc_fullname}-#{private_addr}"
         unless result.nil?
           if result < config[:critical]
+          send_ok(
+          test_name,
+          output,
+          config[:metric]
+        )
             level = 2
-            messages << "#{tag}-#{vpc_fullname}-#{private_addr} is below critical threshold [#{result} < #{config[:critical]}]\n"
+             
+  sensu_client_socket messages << "#{tag}-#{vpc_fullname}-#{private_addr} is below critical threshold [#{result} < #{config[:critical]}]\n"
           elsif config[:warning] && result < config[:warning]
             level = 1 if level.zero?
-            messages << "#{tag}-#{vpc_fullname}-#{private_addr} is below warning threshold [#{result} < #{config[:warning]}]\n"
+ sensu_client_socket messages << "#{tag}-#{vpc_fullname}-#{private_addr} is below warning threshold [#{result} < #{config[:warning]}]\n"
           end
         end
       end
     end
-    ok messages if level.zero?
-    warning messages if level == 1
-    critical messages if level == 2
+    ok if level.zero?
+    warning if level == 1
+    critical if level == 2
   end
 end
