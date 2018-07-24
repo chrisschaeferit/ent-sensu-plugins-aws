@@ -88,10 +88,50 @@ class EC2CpuBalance < Sensu::Plugin::Check::CLI
     tag = instance.tags.select { |t| t.key == tag_name }.first
     tag.nil? ? '' : tag.value
   end
-  ####
-def sensu_client_socket
-    u = UDPSocket.new
-    u.send(msg + "\n", 0, '127.0.0.1', 3030)
+  
+  def send_client_socket(data)
+    udp = UDPSocket.new
+    udp.send(data + "\n", 0, '127.0.0.1', 3030)
+  end
+
+def send_ok(check_name, msg)
+    event = {
+      'name' => check_name,
+      'status' => 0,
+      'output' => "#{self.class.name} OK: #{msg}",
+      'handlers' => config[:handlers]
+    }
+    send_client_socket(event.to_json)
+  end
+
+def send_warning(check_name, msg)
+    event = {
+      'name' => check_name,
+      'status' => 1,
+      'output' => "#{self.class.name} WARNING: #{msg}",
+      'handlers' => config[:handlers]
+    }
+    send_client_socket(event.to_json)
+  end
+
+  def send_critical(check_name, msg)
+    event = {
+      'name' => check_name,
+      'status' => 2,
+      'output' => "#{self.class.name} CRITICAL: #{msg}",
+      'handlers' => config[:handlers]
+    }
+    send_client_socket(event.to_json)
+  end
+
+  def send_unknown(check_name, msg)
+    event = {
+      'name' => check_name,
+      'status' => 3,
+      'output' => "#{self.class.name} UNKNOWN: #{msg}",
+      'handlers' => config[:handlers]
+    }
+    send_client_socket(event.to_json)
   end
 
   def run
@@ -123,20 +163,21 @@ def sensu_client_socket
         id = instance.instance_id
         private_addr = instance.private_ip_address
         result = data id
+        check_name = 'sensu-test'
         messages = "\n"
         tag = config[:tag] ? " #{instance_tag(instance, config[:tag])}" : ''
         output = "#{tag}-#{vpc_fullname}-#{private_addr}"
+        
         unless result.nil?
           if result < config[:critical]
-            messages << "#{output} is below critical threshold [#{result} < #{config[:critical]}]\n"
-            udp.send(messages, 0, '127.0.0.1', 3030)
-            level = 2
+          msg = "#{id}#{tag} is below critical threshold [#{result} < #{config[:critical]}]\n"
+           send_critical(check_name, msg)  
+           level = 2
              
           elsif config[:warning] && result < config[:warning]
-            messages << "#{output} is below warning threshold [#{result} < #{config[:warning]}]\n"
-            udp.send(messages, 0, '127.0.0.1', 3030)
-
-            level = 1 if level.zero?
+           msg = "#{id}#{tag} is below warning threshold [#{result} < #{config[:warning]}]\n" 
+           send_warning(check_name, msg)
+           level = 1 if level.zero?
             
           end
         end
