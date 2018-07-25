@@ -190,6 +190,15 @@ def send_warning(source_name, check_name, msg)
       level = 1
       msg = "No instances checked in as running in #{config[:aws_region]}."
     end
+    
+    if level == 2
+    output = "test"
+    end
+
+    if level == 3
+    output = "ERROR, something is wrong with the API call."
+    end
+
 
     ok(msg) if level.zero?
     warning(msg) if level == 1
