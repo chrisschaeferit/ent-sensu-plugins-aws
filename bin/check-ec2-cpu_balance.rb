@@ -145,7 +145,15 @@ def send_warning(source_name, check_name, msg)
         }
       ]
     )
-   vpcnames = ec2.describe_vpcs(
+
+    ##local check fail handler, no instances found
+   if instances.reservations.empty?
+   message = "No running instances found!"
+   critical(message)
+   exit (2)
+   else
+   
+           vpcnames = ec2.describe_vpcs(
             filters: [
                     {
                 name: 'tag-key',
@@ -153,10 +161,18 @@ def send_warning(source_name, check_name, msg)
                     }
             ]
     )
-    vpc_fullname = vpcnames.data[:vpcs].first.tags.find{|tag| tag.key == 'Name' }.value
 
-   level = 0
+     ##local check fail handler, no vpcs found
+    if vpcnames.vpcs.empty?
+    message = "No vpc information found!"
+    critical(message)
+    exit (2)
+    else
 
+        vpc_fullname = vpcnames.data[:vpcs].first.tags.find{|tag| tag.key == 'Name' }.value
+
+
+    level = 0
     instances.reservations.each do |reservation|
       reservation.instances.each do |instance|
         next unless instance.instance_type.start_with? 't2.'
@@ -164,52 +180,40 @@ def send_warning(source_name, check_name, msg)
         availzone = instance.placement.availability_zone
         private_addr = instance.private_ip_address
         result = data id
-        messages = "\n"
         tag = instance.tags.find{|tag| tag.key == 'Name'}.value
         source_name = "#{tag}-#{vpc_fullname}-#{private_addr}"
         check_name = "#{tag}_#{availzone}"
-        level = 3 if result.nil?
+        if result.nil?
+        level = 3
+        else
         unless result.nil?
           if result < config[:critical]
           msg = "#{tag}-#{vpc_fullname}-#{private_addr} is below critical threshold [#{result} < #{config[:critical]}]\n"
            send_critical(source_name, check_name, msg)
-           #level = 2
 
           elsif config[:warning] && result < config[:warning]
            msg = "#{tag}-#{vpc_fullname}-#{private_addr} is below warning threshold [#{result} < #{config[:warning]}]\n"
            send_warning(source_name, check_name, msg)
-           #level = 1 if level.zero?
 
-   # if instances
-
-    if level == 0
-     msg = "All checks running"
-    end
-
-    if instances.reservations.nil?
-      level = 1
-      msg = "No instances checked in as running in #{config[:aws_region]}."
-    end
-    
-    if level == 2
-    output = "test"
+     if level == 0
+     output = "All checks running"
     end
 
     if level == 3
-    output = "ERROR, something is wrong with the API call."
+    output = "No instances were able to be identified"
     end
 
-
-    ok(msg) if level.zero?
-    warning(msg) if level == 1
-    critical(msg) if level == 2
-    unknown(msg) if level == 3
-
+    ok(output) if level.zero?
+    unknown(output) if level == 3
           end
-        end
-      end
-    end
-
+     end
+     end
+     end
+     end
+     end
+     end
   end
-end
+
+ end
+
 
