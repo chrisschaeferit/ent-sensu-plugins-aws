@@ -58,9 +58,16 @@ class EC2CpuBalance < Sensu::Plugin::Check::CLI
          default: 'us-east-1'
 
   option :tag,
-         description: 'Add instance TAG value to warn/critical message.',
          short: '-t TAG',
-         long: '--tag TAG'
+         long: '--tag TAG',
+         description: 'Tag stuff'
+
+  option :environment,
+         description: 'Run against only specific app tier (dev,qa,uat,prod).',
+         short: '-e TAG',
+         long: '--environment TAG',
+         default: 'prod'
+
 
   def data(instance)
     client = Aws::CloudWatch::Client.new
@@ -118,7 +125,7 @@ def send_warning(source_name, check_name, msg)
      'name' => check_name,
       'source' => source_name,
       'status' => 2,
-      'output' => "#{self.class.name} CRITICAL: #{msg}",
+     'output' => "#{self.class.name} CRITICAL: #{msg}",
       'handlers' => config[:handlers]
     }
     send_client_socket(event.to_json)
@@ -142,18 +149,19 @@ def send_warning(source_name, check_name, msg)
         {
           name: 'instance-state-name',
           values: ['running']
+        },
+        {
+          name: 'tag:app_tier',
+          values: ["#{config[:environment]}"]
         }
       ]
     )
-
-    ##local check fail handler, no instances found
    if instances.reservations.empty?
    message = "No running instances found!"
-   critical(message)
-   exit (2)
+   unknown(message)
+   exit (3)
    else
-   
-           vpcnames = ec2.describe_vpcs(
+   vpcnames = ec2.describe_vpcs(
             filters: [
                     {
                 name: 'tag-key',
@@ -161,18 +169,15 @@ def send_warning(source_name, check_name, msg)
                     }
             ]
     )
-
-     ##local check fail handler, no vpcs found
     if vpcnames.vpcs.empty?
     message = "No vpc information found!"
-    critical(message)
-    exit (2)
+    unknown(message)
+    exit (3)
     else
+    vpc_fullname = vpcnames.data[:vpcs].first.tags.find{|tag| tag.key == 'Name' }.value
 
-        vpc_fullname = vpcnames.data[:vpcs].first.tags.find{|tag| tag.key == 'Name' }.value
 
-
-    level = 0
+    @level = 0
     instances.reservations.each do |reservation|
       reservation.instances.each do |instance|
         next unless instance.instance_type.start_with? 't2.'
@@ -184,7 +189,7 @@ def send_warning(source_name, check_name, msg)
         source_name = "#{tag}-#{vpc_fullname}-#{private_addr}"
         check_name = "#{tag}_#{availzone}"
         if result.nil?
-        level = 3
+        @level = 3
         else
         unless result.nil?
           if result < config[:critical]
@@ -195,25 +200,28 @@ def send_warning(source_name, check_name, msg)
            msg = "#{tag}-#{vpc_fullname}-#{private_addr} is below warning threshold [#{result} < #{config[:warning]}]\n"
            send_warning(source_name, check_name, msg)
 
-     if level == 0
-     output = "All checks running"
+           else result > config[:warning] && result > config[:critical]
+           msg = "#{tag}-#{vpc_fullname}-#{private_addr} CPU Credit usage okay at this time."
+           send_ok(source_name, check_name, msg)
+     
+         end
+     if @level == 0
+     @output = "Check running with no issues"
     end
 
-    if level == 3
-    output = "No instances were able to be identified"
+    if @level == 3
+    @output = "No instances were able to be identified"
     end
 
-    ok(output) if level.zero?
-    unknown(output) if level == 3
-          end
-     end
-     end
-     end
-     end
+       end
+       end
+       end
+       end
+    ok(@output) if @level == 0
+    unknown(message) if @level == 3
      end
      end
   end
 
  end
-
 
