@@ -23,6 +23,8 @@
 #
 # NOTES:
 #
+# Modified by Chris Schaefer
+#
 # LICENSE:
 #   Shane Starcher
 #   Released under the same terms as Sensu (the MIT license); see LICENSE
@@ -34,19 +36,17 @@ require 'sensu-plugin/check/cli'
 require 'aws-sdk'
 require 'socket'
 require 'json'
-
 class EC2CpuBalance < Sensu::Plugin::Check::CLI
   include Common
-
   option :critical,
-         description: 'Trigger a critical when value is below VALUE',
+         description: 'Trigger a critical when value is below VALUE%',
          short: '-c VALUE',
          long: '--critical VALUE',
          proc: proc(&:to_f),
          required: true
 
   option :warning,
-         description: 'Trigger a warning when value is below VALUE',
+         description: 'Trigger a warning when value is below VALUE%',
          short: '-w VALUE',
          long: '--warning VALUE',
          proc: proc(&:to_f)
@@ -56,11 +56,6 @@ class EC2CpuBalance < Sensu::Plugin::Check::CLI
          long: '--region REGION',
          description: 'AWS region',
          default: 'us-east-1'
-
-  option :tag,
-         short: '-t TAG',
-         long: '--tag TAG',
-         description: 'Tag stuff'
 
   option :environment,
          description: 'Run against only specific app tier (dev,qa,uat,prod).',
@@ -125,7 +120,7 @@ def send_warning(source_name, check_name, msg)
      'name' => check_name,
       'source' => source_name,
       'status' => 2,
-     'output' => "#{self.class.name} CRITICAL: #{msg}",
+      'output' => "#{self.class.name} CRITICAL: #{msg}",
       'handlers' => config[:handlers]
     }
     send_client_socket(event.to_json)
@@ -141,7 +136,6 @@ def send_warning(source_name, check_name, msg)
     }
     send_client_socket(event.to_json)
   end
-
   def run
     ec2 = Aws::EC2::Client.new
     instances = ec2.describe_instances(
@@ -181,6 +175,27 @@ def send_warning(source_name, check_name, msg)
     instances.reservations.each do |reservation|
       reservation.instances.each do |instance|
         next unless instance.instance_type.start_with? 't2.'
+
+            instancetype = instance.instance_type.partition('.').last
+        case instancetype
+            when 'nano'
+            @creditmax = 72
+            when 'micro'
+            @creditmax = 144
+            when 'small'
+            @creditmax = 288
+            when 'medium'
+            @creditmax = 576
+            when 'large'
+            @creditmax = 864
+            when 'xlarge'
+            @creditmax = 1296
+            when '2xlarge'
+            @creditmax = 1944
+         end
+
+
+
         id = instance.instance_id
         availzone = instance.placement.availability_zone
         private_addr = instance.private_ip_address
@@ -188,23 +203,25 @@ def send_warning(source_name, check_name, msg)
         tag = instance.tags.find{|tag| tag.key == 'Name'}.value
         source_name = "#{tag}-#{vpc_fullname}-#{private_addr}"
         check_name = "#{tag}_#{availzone}"
+
         if result.nil?
         @level = 3
         else
         unless result.nil?
-          if result < config[:critical]
-          msg = "#{tag}-#{vpc_fullname}-#{private_addr} is below critical threshold [#{result} < #{config[:critical]}]\n"
+          criticalbase =  @creditmax.to_f * config[:critical].to_f / 100
+          warningbase =  @creditmax.to_f * config[:warning].to_f / 100
+          if result < criticalbase && result < warningbase
+          msg = "#{tag}-#{vpc_fullname}-#{private_addr} is below critical threshold [#{result} < #{criticalbase}] \n"
            send_critical(source_name, check_name, msg)
 
-          elsif config[:warning] && result < config[:warning]
-           msg = "#{tag}-#{vpc_fullname}-#{private_addr} is below warning threshold [#{result} < #{config[:warning]}]\n"
+          elsif config[:warning] && result < warningbase
+           msg = "#{tag}-#{vpc_fullname}-#{private_addr} is below warning threshold [#{result} < #{warningbase}] \n"
            send_warning(source_name, check_name, msg)
 
-           else result > config[:warning] && result > config[:critical]
-           msg = "#{tag}-#{vpc_fullname}-#{private_addr} CPU Credit usage okay at this time."
+          elsif result > warningbase && result > criticalbase
+           msg = "#{tag}-#{vpc_fullname}-#{private_addr} CPU Credit usage okay at this time [#{result}] [crit = #{criticalbase}] [warn = #{warningbase}]."
            send_ok(source_name, check_name, msg)
-     
-         end
+     end
      if @level == 0
      @output = "Check running with no issues"
     end
@@ -212,7 +229,6 @@ def send_warning(source_name, check_name, msg)
     if @level == 3
     @output = "No instances were able to be identified"
     end
-
        end
        end
        end
@@ -222,6 +238,5 @@ def send_warning(source_name, check_name, msg)
      end
      end
   end
-
  end
 
