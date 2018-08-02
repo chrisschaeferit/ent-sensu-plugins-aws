@@ -19,7 +19,7 @@
 # USAGE:
 #   ./check-ec2-cpu_balance -c 20
 #   ./check-ec2-cpu_balance -w 25 -c 20
-#   ./check-ec2-cpu_balance -c 20 -t 'Name'
+#   ./check-ec2-cpu_balance -c 20 -r us-east-2
 #
 # NOTES:
 #
@@ -38,6 +38,7 @@ require 'socket'
 require 'json'
 class EC2CpuBalance < Sensu::Plugin::Check::CLI
   include Common
+  ##CRITICAL option is %PERCENT based
   option :critical,
          description: 'Trigger a critical when value is below VALUE%',
          short: '-c VALUE',
@@ -45,6 +46,8 @@ class EC2CpuBalance < Sensu::Plugin::Check::CLI
          proc: proc(&:to_f),
          required: true
 
+
+  ##WARNING option is %PERCENT based
   option :warning,
          description: 'Trigger a warning when value is below VALUE%',
          short: '-w VALUE',

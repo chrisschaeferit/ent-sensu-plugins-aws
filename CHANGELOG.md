@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 This CHANGELOG follows the format listed [here](https://github.com/sensu-plugins/community/blob/master/HOW_WE_CHANGELOG.md)
 
 ## [Unreleased]
+## [12.0.1] - 2018-07-28]
+### Retooling for Entertainment Publications
+- stripped all stock checks with the exception of check-s3-object.rb, rebuilt check-ec2-cpu_balance.rb to fit check integrity pattern
 
 ## [12.0.0] - 2018-06-21
 ### Breaking Changes
