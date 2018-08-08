@@ -4,6 +4,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 This CHANGELOG follows the format listed [here](https://github.com/sensu-plugins/community/blob/master/HOW_WE_CHANGELOG.md)
 
 ## [Unreleased]
+
+## [12.0.2] - 2018-08-08]
+### ec2 handler integration 
+- Tore down running filter to allow sensu ec2 handler to use terminated / stopped instances states to tear down orphan checks
+
 ## [12.0.1] - 2018-07-28]
 ### Retooling for Entertainment Publications
 - stripped all stock checks with the exception of check-s3-object.rb, rebuilt check-ec2-cpu_balance.rb to fit check integrity pattern
