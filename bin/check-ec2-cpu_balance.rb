@@ -143,10 +143,12 @@ def send_warning(source_name, check_name, msg)
     ec2 = Aws::EC2::Client.new
     instances = ec2.describe_instances(
       filters: [
-        {
-          name: 'instance-state-name',
-          values: ['running']
-        },
+        
+        #removed to allow terminated instances to report to ec2_handler
+        #{
+        #  name: 'instance-state-name',
+        #  values: ['running']
+        #},
         {
           name: 'tag:app_tier',
           values: ["#{config[:environment]}"]
@@ -155,6 +157,7 @@ def send_warning(source_name, check_name, msg)
     )
    if instances.reservations.empty?
    message = "No running instances found!"
+   @level = 3
    unknown(message)
    exit (3)
    else
@@ -168,6 +171,7 @@ def send_warning(source_name, check_name, msg)
     )
     if vpcnames.vpcs.empty?
     message = "No vpc information found!"
+    @level = 3
     unknown(message)
     exit (3)
     else
@@ -207,9 +211,6 @@ def send_warning(source_name, check_name, msg)
         source_name = "#{tag}-#{vpc_fullname}-#{private_addr}"
         check_name = "#{tag}_#{availzone}"
 
-        if result.nil?
-        @level = 3
-        else
         unless result.nil?
           criticalbase =  @creditmax.to_f * config[:critical].to_f / 100
           warningbase =  @creditmax.to_f * config[:warning].to_f / 100
@@ -232,7 +233,6 @@ def send_warning(source_name, check_name, msg)
     if @level == 3
     @output = "No instances were able to be identified"
     end
-       end
        end
        end
        end
