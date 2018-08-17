@@ -211,6 +211,14 @@ def send_warning(source_name, check_name, msg)
         source_name = "#{tag}-#{vpc_fullname}-#{private_addr}"
         check_name = "#{tag}_#{availzone}"
 
+        
+        if private_addr.nil? or availzone.nil? or tag.nil? or vpc_fullname.nil?
+          @output = "one or more fields is still populating."
+          puts "#{@output}  private_addr = #{private_addr}, availzone = #{availzone}, tag = #{tag}, vpc_fullname = #{vpc_fullname}"
+           exit 1
+        end
+
+
         unless result.nil?
           criticalbase =  @creditmax.to_f * config[:critical].to_f / 100
           warningbase =  @creditmax.to_f * config[:warning].to_f / 100
