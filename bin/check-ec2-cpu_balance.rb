@@ -181,24 +181,24 @@ def send_warning(source_name, check_name, msg)
     @level = 0
     instances.reservations.each do |reservation|
       reservation.instances.each do |instance|
-        next unless instance.instance_type.start_with? 't2.'
+        next unless instance.instance_type.start_with? 't3.'
 
             instancetype = instance.instance_type.partition('.').last
         case instancetype
             when 'nano'
-            @creditmax = 72
-            when 'micro'
             @creditmax = 144
-            when 'small'
+            when 'micro'
             @creditmax = 288
+            when 'small'
+            @creditmax = 576
             when 'medium'
             @creditmax = 576
             when 'large'
             @creditmax = 864
             when 'xlarge'
-            @creditmax = 1296
+            @creditmax = 2304
             when '2xlarge'
-            @creditmax = 1944
+            @creditmax = 4608
          end
 
 
