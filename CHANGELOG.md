@@ -5,15 +5,20 @@ This CHANGELOG follows the format listed [here](https://github.com/sensu-plugins
 
 ## [Unreleased]
 
-## [12.0.3] - 2018-08-17]
+## [12.0.4] - 2018-08-27
+### Updated
+- `check-ec2-cpu_balance.rb`: Updated the instance type table for moving to an all-t3 based architecture
+
+
+## [12.0.3] - 2018-08-17
 ### Fixed
 - `check-ec2-cpu_balance.rb`: Fixed an issue where instances that weren't finished provisioning but able to be queried via the API for their metrics were creating anomaly proxy clients in sensu that required manual removal
 
-## [12.0.2] - 2018-08-08]
+## [12.0.2] - 2018-08-08
 ### Added
 - Tore down running filter to allow sensu ec2 handler to use terminated / stopped instances states to tear down orphan checks
 
-## [12.0.1] - 2018-07-28]
+## [12.0.1] - 2018-07-28
 ### Retooling for Entertainment Publications
 - stripped all stock checks with the exception of check-s3-object.rb, rebuilt check-ec2-cpu_balance.rb to fit check integrity pattern
 
