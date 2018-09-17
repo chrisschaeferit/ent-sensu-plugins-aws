@@ -66,6 +66,12 @@ class EC2CpuBalance < Sensu::Plugin::Check::CLI
          long: '--environment TAG',
          default: 'prod'
 
+  option :handlers,
+         description: 'Handlers to pass into ec2 check populated sources.',
+         short: '-h HANDLERS',
+         long: '--handlers HANDLERS',
+         default: ['pagerduty', 'logstash', 'ec2_instance']
+
 
   def data(instance)
     client = Aws::CloudWatch::Client.new

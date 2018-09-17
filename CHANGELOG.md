@@ -5,6 +5,10 @@ This CHANGELOG follows the format listed [here](https://github.com/sensu-plugins
 
 ## [Unreleased]
 
+## [12.0.5] - 2018-09-17
+### Hotfix
+- `check-ec2-cpu_balance.rb`: Hotfix to resolve issue where the clients sourcing from the offending ec2 check instance were not honoring the handlers set in puppet
+
 ## [12.0.4] - 2018-08-27
 ### Updated
 - `check-ec2-cpu_balance.rb`: Updated the instance type table for moving to an all-t3 based architecture
