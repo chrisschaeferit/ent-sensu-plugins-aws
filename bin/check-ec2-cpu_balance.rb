@@ -106,6 +106,8 @@ def send_ok(source_name, check_name, msg)
       'name' => check_name,
       'source' => source_name,
       'status' => 0,
+      'ttl'    => 600,
+      'ttl_status' => 2,
       'output' => "#{self.class.name} OK: #{msg}",
       'handlers' => config[:handlers]
     }
@@ -118,6 +120,8 @@ def send_warning(source_name, check_name, msg)
       'name' => check_name,
       'source' => source_name,
       'status' => 1,
+      'ttl'    => 600,
+      'ttl_status' => 2,
       'output' => "#{self.class.name} WARNING: #{msg}",
       'handlers' => config[:handlers]
     }
@@ -129,6 +133,8 @@ def send_warning(source_name, check_name, msg)
      'name' => check_name,
       'source' => source_name,
       'status' => 2,
+      'ttl'    => 600,
+      'ttl_status' => 2,
       'output' => "#{self.class.name} CRITICAL: #{msg}",
       'handlers' => config[:handlers]
     }
@@ -140,6 +146,8 @@ def send_warning(source_name, check_name, msg)
       'name' => check_name,
       'source' => source_name,
       'status' => 3,
+      'ttl'    => 600,
+      'ttl_status' => 2,
       'output' => "#{self.class.name} UNKNOWN: #{msg}",
       'handlers' => config[:handlers]
     }
