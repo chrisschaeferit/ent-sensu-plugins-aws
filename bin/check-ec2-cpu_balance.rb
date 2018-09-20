@@ -195,7 +195,7 @@ def send_warning(source_name, check_name, msg)
     @level = 0
     instances.reservations.each do |reservation|
       reservation.instances.each do |instance|
-        next unless instance.instance_type.start_with? 't3.'
+        next unless (instance.instance_type.start_with? 't2.') or (instance.instance_type.start_with? 't3.')
 
             instancetype = instance.instance_type.partition('.').last
         case instancetype
