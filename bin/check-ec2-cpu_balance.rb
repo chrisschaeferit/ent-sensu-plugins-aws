@@ -226,10 +226,10 @@ def send_warning(source_name, check_name, msg)
         check_name = "#{tag}_#{availzone}"
 
         
-        if private_addr.nil? or availzone.nil? or tag.nil? or vpc_fullname.nil?
-          @output = "one or more fields is still populating."
+        if (private_addr.nil? or availzone.nil? or tag.nil? or vpc_fullname.nil? and instance.state.name == 'running')   
+        @output = "one or more fields is still populating."
           puts "#{@output}  private_addr = #{private_addr}, availzone = #{availzone}, tag = #{tag}, vpc_fullname = #{vpc_fullname}"
-           exit 1
+        exit 1
         end
 
 

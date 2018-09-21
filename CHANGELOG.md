@@ -5,6 +5,10 @@ This CHANGELOG follows the format listed [here](https://github.com/sensu-plugins
 
 ## [Unreleased]
 
+## [12.0.6] - 2018-09-21
+### Feature
+- `check-ec2-cpu_balance.rb`: Better sensu proxy client handling of t2/t3 split as well as pre-instance population for output handling
+
 ## [12.0.5] - 2018-09-17
 ### Hotfix
 - `check-ec2-cpu_balance.rb`: Hotfix to resolve issue where the clients sourcing from the offending ec2 check instance were not honoring the handlers set in puppet
