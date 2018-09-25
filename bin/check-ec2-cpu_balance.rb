@@ -158,11 +158,10 @@ def send_warning(source_name, check_name, msg)
     instances = ec2.describe_instances(
       filters: [
         
-        #removed to allow terminated instances to report to ec2_handler
-        #{
-        #  name: 'instance-state-name',
-        #  values: ['running']
-        #},
+        {
+          name: 'instance-state-name',
+          values: ['running']
+        },
         {
           name: 'tag:app_tier',
           values: ["#{config[:environment]}"]
@@ -226,25 +225,23 @@ def send_warning(source_name, check_name, msg)
         check_name = "#{tag}_#{availzone}"
 
         
-        if (private_addr.nil? or availzone.nil? or tag.nil? or vpc_fullname.nil? and instance.state.name == 'running')   
-        @output = "one or more fields is still populating."
-          puts "#{@output}  private_addr = #{private_addr}, availzone = #{availzone}, tag = #{tag}, vpc_fullname = #{vpc_fullname}"
-        exit (1)
+        if (private_addr.nil? or availzone.nil? or tag.nil? or vpc_fullname.nil? and instance.state.name == 'running')  
+         @level == 4
         end
 
 
         unless result.nil?
           criticalbase =  @creditmax.to_f * config[:critical].to_f / 100
           warningbase =  @creditmax.to_f * config[:warning].to_f / 100
-          if result < criticalbase && result < warningbase
+          if result < criticalbase && @level != 4
           msg = "#{tag}-#{vpc_fullname}-#{private_addr} is below critical threshold [#{result} < #{criticalbase}] \n"
            send_critical(source_name, check_name, msg)
 
-          elsif config[:warning] && result < warningbase
+          elsif config[:warning] && result < warningbase && @level != 4
            msg = "#{tag}-#{vpc_fullname}-#{private_addr} is below warning threshold [#{result} < #{warningbase}] \n"
            send_warning(source_name, check_name, msg)
 
-          elsif result > warningbase && result > criticalbase
+          elsif result > warningbase && result > criticalbase && @level != 4
            msg = "#{tag}-#{vpc_fullname}-#{private_addr} CPU Credit usage okay at this time [#{result}] [crit = #{criticalbase}] [warn = #{warningbase}]."
            send_ok(source_name, check_name, msg)
      end
