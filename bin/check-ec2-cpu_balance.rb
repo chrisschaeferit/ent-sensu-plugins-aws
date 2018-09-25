@@ -231,7 +231,7 @@ def send_warning(source_name, check_name, msg)
         result = data id
         tag = instance.tags.find{|tag| tag.key == 'Name'}.value
         source_name = "#{tag}-#{vpc_fullname}-#{private_addr}"
-        check_name = "#{tag}_#{availzone}"
+        check_name = "ec2_creditcheck_#{tag}_#{availzone}"
 
         
         if (private_addr.nil? or availzone.nil? or tag.nil? or vpc_fullname.nil? and instance.state.name == 'running')  
