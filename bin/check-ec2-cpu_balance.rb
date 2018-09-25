@@ -72,6 +72,11 @@ class EC2CpuBalance < Sensu::Plugin::Check::CLI
          long: '--handlers HANDLERS',
          default: ['pagerduty', 'hipchat', 'logstash', 'ec2_instance']
 
+  option :pager_team,
+         description: 'PagerDuty service team to send notifies to.',
+         short: '-t TEAM',
+         long: '--team TEAM',
+         default: 'us-east-2_ops-team_prod'
 
   def data(instance)
     client = Aws::CloudWatch::Client.new
@@ -103,13 +108,14 @@ class EC2CpuBalance < Sensu::Plugin::Check::CLI
 
 def send_ok(source_name, check_name, msg)
     event = {
-      'name' => check_name,
-      'source' => source_name,
-      'status' => 0,
-      'ttl'    => 600,
+      'name'       => check_name,
+      'source'     => source_name,
+      'status'     => 0,
+      'ttl'        => 900,
       'ttl_status' => 2,
-      'output' => "#{self.class.name} OK: #{msg}",
-      'handlers' => config[:handlers]
+      'output'     => "#{self.class.name} OK: #{msg}",
+      'handlers'   => config[:handlers],
+      'pager_team' => config[:pager_team]
     }
     send_client_socket(event.to_json)
   end
@@ -117,39 +123,42 @@ def send_ok(source_name, check_name, msg)
 def send_warning(source_name, check_name, msg)
 
     event = {
-      'name' => check_name,
-      'source' => source_name,
-      'status' => 1,
-      'ttl'    => 600,
+      'name'       => check_name,
+      'source'     => source_name,
+      'status'     => 1,
+      'ttl'        => 900,
       'ttl_status' => 2,
-      'output' => "#{self.class.name} WARNING: #{msg}",
-      'handlers' => config[:handlers]
+      'output'     => "#{self.class.name} WARNING: #{msg}",
+      'handlers'   => config[:handlers],
+      'pager_team' => config[:pager_team]
     }
     send_client_socket(event.to_json)
   end
 
   def send_critical(source_name, check_name, msg)
     event = {
-     'name' => check_name,
-      'source' => source_name,
-      'status' => 2,
-      'ttl'    => 600,
+     'name'        => check_name,
+      'source'     => source_name,
+      'status'     => 2,
+      'ttl'        => 900,
       'ttl_status' => 2,
-      'output' => "#{self.class.name} CRITICAL: #{msg}",
-      'handlers' => config[:handlers]
+      'output'     => "#{self.class.name} CRITICAL: #{msg}",
+      'handlers'   => config[:handlers],
+      'pager_team' => config[:pager_team]
     }
     send_client_socket(event.to_json)
   end
 
   def send_unknown(source_name, check_name, msg)
     event = {
-      'name' => check_name,
-      'source' => source_name,
-      'status' => 3,
-      'ttl'    => 600,
+      'name'       => check_name,
+      'source'     => source_name,
+      'status'     => 3,
+      'ttl'        => 900,
       'ttl_status' => 2,
-      'output' => "#{self.class.name} UNKNOWN: #{msg}",
-      'handlers' => config[:handlers]
+      'output'     => "#{self.class.name} UNKNOWN: #{msg}",
+      'handlers'   => config[:handlers],
+      'pager_team' => config[:pager_team]
     }
     send_client_socket(event.to_json)
   end
